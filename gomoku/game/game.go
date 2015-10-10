@@ -1,11 +1,17 @@
 package game
 
 import (
-	//"fmt"
+	"fmt"
+	"gomoku/rules"
 	tl "termloop"
 )
 
 const (
+	UND = iota
+	P1
+	P2
+	AI1
+	AI2
 	cornerUL rune = '┌'
 	cornerUR rune = '┐'
 	cornerLL rune = '└'
@@ -22,11 +28,6 @@ const (
 	boardSize  = 19
 	boardTiles = 19 * 19
 	tileStr    = "┌───┐\n│   │\n└───┘"
-	P1         = iota
-	P2
-	UND
-	AI1
-	AI2
 )
 
 type board struct {
@@ -43,9 +44,16 @@ type board struct {
 	ComOut    chan [boardSize][boardSize]int8
 	ComIn     chan [2]int8
 	screen    *tl.Screen
+	wel       *welcome
 }
 
 func (b *board) setPiece() {
+	if err := rules.Check(b.sY, b.sX, &b.tiles); err != nil {
+		if b.turn == AI1 || b.turn == AI2 {
+			b.ComOut <- b.tiles
+		}
+		return
+	}
 	if b.turn == P1 || b.turn == AI1 {
 		b.tilesDisp[b.sY][b.sX].black()
 		b.tiles[b.sY][b.sX] = b.player1
@@ -61,6 +69,9 @@ func (b *board) setPiece() {
 			b.ComOut <- b.tiles
 		}
 	}
+	if err := rules.CheckWin(b.sY, b.sX, &b.tiles); err != nil {
+		fmt.Println(err)
+	}
 }
 
 func (b *board) sendBoard() (out [boardSize][boardSize]int8) {
@@ -72,10 +83,8 @@ func (b *board) sendBoard() (out [boardSize][boardSize]int8) {
 	return
 }
 
-func newBoard(offestX, offsetY int, level *tl.BaseLevel, screen *tl.Screen, player1 int8, player2 int8, comIn chan [2]int8, comOut chan [boardSize][boardSize]int8) (b *board) {
+func newBoard(level *tl.BaseLevel, screen *tl.Screen, player1 int8, player2 int8, comIn chan [2]int8, comOut chan [boardSize][boardSize]int8, wel *welcome) (b *board) {
 	b = new(board)
-	b.offsetX = offestX
-	b.offsetY = offsetY
 	b.addTiles()
 	b.level = level
 	b.player1 = player1
@@ -83,6 +92,7 @@ func newBoard(offestX, offsetY int, level *tl.BaseLevel, screen *tl.Screen, play
 	b.ComIn = comIn
 	b.ComOut = comOut
 	b.screen = screen
+	b.wel = wel
 	return
 }
 
@@ -95,12 +105,14 @@ func (b *board) addTiles() {
 }
 
 func (b *board) Draw(screen *tl.Screen) {
-	w, h := screen.Size()
-	b.level.SetOffset(w/2-((boardSize*tileSizeX)/2), h/2-((boardSize*tileSizeY)/2))
-	b.tilesDisp[b.sY][b.sX].selected()
-	for _, tY := range b.tilesDisp {
-		for _, tX := range tY {
-			tX.Draw(screen)
+	if b.wel.done {
+		w, h := screen.Size()
+		b.level.SetOffset(w/2-((boardSize*tileSizeX)/2), h/2-((boardSize*tileSizeY)/2))
+		b.tilesDisp[b.sY][b.sX].selected()
+		for _, tY := range b.tilesDisp {
+			for _, tX := range tY {
+				tX.Draw(screen)
+			}
 		}
 	}
 }
@@ -143,10 +155,28 @@ func (b *board) handleAIInput() {
 }
 
 func (b *board) Tick(event tl.Event) {
-	if b.turn == P1 || b.turn == P2 {
-		b.handleHumanInput(event)
-	} else {
-		b.handleAIInput()
+	if b.wel.selected < 4 {
+		switch b.wel.selected {
+		case 0:
+			b.player1 = P1
+			b.player2 = P2
+		case 1:
+			b.player1 = P1
+			b.player2 = AI2
+		case 2:
+			b.player1 = AI1
+			b.player2 = P2
+		case 3:
+			b.player1 = AI1
+			b.player2 = AI2
+		}
+	}
+	if b.wel.done {
+		if b.turn == P1 || b.turn == P2 {
+			b.handleHumanInput(event)
+		} else {
+			b.handleAIInput()
+		}
 	}
 	//check rules with rules package
 }
@@ -159,11 +189,11 @@ func Start(comOut chan [boardSize][boardSize]int8, comIn chan [2]int8) {
 		Fg: tl.RgbTo256Color(92, 64, 51),
 	})
 	game.Screen().SetLevel(level)
-	b := newBoard(0, 0, level, game.Screen(), P1, AI2, comIn, comOut)
+	w := newWelcome()
+	w.level = level
+	level.AddEntity(w)
+	b := newBoard(level, game.Screen(), P1, AI2, comIn, comOut, w)
 	level.AddEntity(b)
-	fps := tl.NewFpsText(0, 0, tl.ColorBlack, tl.ColorRed, 1)
-	level.AddEntity(fps)
 	b.turn = b.player1
-	b.ComIn <- [2]int8{10, 9}
 	game.Start()
 }
