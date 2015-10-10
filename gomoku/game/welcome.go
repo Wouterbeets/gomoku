@@ -1,7 +1,7 @@
 package game
 
 import (
-	tl "gomoku/termloop"
+	tl "termloop"
 )
 
 var welcomeMsg tl.Canvas
@@ -19,12 +19,13 @@ func Draw(screen *tl.Screen) {
 }
 
 func newWelcome() *welcome {
-	w := &welcome{}
-	//entity: tl.NewEntityFromCanvas()
+	w := &welcome{
+		entity: tl.NewEntityFromCanvas(0, 0, welcomeMsg),
+	}
 	return w
 
 }
 
 func init() {
-	welcomeMsg = CanvasFromString("hello")
+	welcomeMsg = tl.CanvasFromString("hello")
 }

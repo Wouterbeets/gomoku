@@ -2,7 +2,7 @@ package game
 
 import (
 	//"fmt"
-	tl "gomoku/termloop"
+	tl "termloop"
 )
 
 type tile struct {
