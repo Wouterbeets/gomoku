@@ -11,12 +11,27 @@ const (
 	boardSize = 19
 )
 
-func diag(posY, posX int8, b *[boardSize][boardSize]int8) (int, error) {
+func diagUp(posY, posX int8, b *[boardSize][boardSize]int8) (int, error) {
+	l, y, x, tile := 1, posY+1, posX-1, b[posY][posX]
+	for ; y < boardSize && x > 0 && b[y][x] == tile; y, x = y+1, x-1 {
+		l++
+	}
+	y, x = posY-1, posX+1
+	for ; y >= 0 && x < boardSize && b[y][x] == tile; y, x = y-1, x+1 {
+		l++
+	}
+	if l > 4 {
+		return l, errors.New("win")
+	}
+	return l, nil
+}
+
+func diagDown(posY, posX int8, b *[boardSize][boardSize]int8) (int, error) {
 	l, y, x, tile := 1, posY+1, posX+1, b[posY][posX]
 	for ; y < boardSize && x < boardSize && b[y][x] == tile; y, x = y+1, x+1 {
 		l++
 	}
-	y, x = posY-1, posX
+	y, x = posY-1, posX-1
 	for ; y >= 0 && x >= 0 && b[y][x] == tile; y, x = y-1, x-1 {
 		l++
 	}
@@ -63,7 +78,10 @@ func CheckWin(y, x int8, b *[boardSize][boardSize]int8) error {
 	if _, err := verti(y, x, b); err != nil {
 		return err
 	}
-	if _, err := diag(y, x, b); err != nil {
+	if _, err := diagDown(y, x, b); err != nil {
+		return err
+	}
+	if _, err := diagUp(y, x, b); err != nil {
 		return err
 	}
 	return nil

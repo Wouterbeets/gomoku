@@ -1,7 +1,6 @@
 package game
 
 import (
-	"fmt"
 	"gomoku/rules"
 	tl "termloop"
 )
@@ -30,6 +29,13 @@ const (
 	tileStr    = "┌───┐\n│   │\n└───┘"
 )
 
+const (
+	START = iota
+	PLAY
+	WINP1
+	WINP2
+)
+
 var (
 	Bg tl.Attr = tl.RgbTo256Color(60, 150, 180)
 	Fg tl.Attr = tl.RgbTo256Color(92, 64, 51)
@@ -50,12 +56,13 @@ type board struct {
 	ComIn     chan [2]int8
 	screen    *tl.Screen
 	wel       *welcome
-	start     bool
+	state     int8
 	comHud    chan string
 }
 
 func (b *board) setPiece() {
 	if err := rules.Check(b.sY, b.sX, &b.tiles); err != nil {
+		b.comHud <- err.Error()
 		if b.turn == AI1 || b.turn == AI2 {
 			b.ComOut <- b.tiles
 		}
@@ -77,17 +84,14 @@ func (b *board) setPiece() {
 		}
 	}
 	if err := rules.CheckWin(b.sY, b.sX, &b.tiles); err != nil {
-		fmt.Println(err)
-	}
-}
-
-func (b *board) sendBoard() (out [boardSize][boardSize]int8) {
-	for y := 0; y < boardSize; y++ {
-		for x := 0; x < boardSize; x++ {
-			out[y][x] = b.tiles[y][x]
+		if b.turn == b.player1 {
+			b.state = WINP2
+			b.comHud <- err.Error() + "player 1"
+		} else {
+			b.state = WINP1
+			b.comHud <- err.Error() + "player 2"
 		}
 	}
-	return
 }
 
 func newBoard(level *tl.BaseLevel, screen *tl.Screen, player1 int8, player2 int8, comIn chan [2]int8, comOut chan [boardSize][boardSize]int8, wel *welcome) (b *board) {
@@ -113,16 +117,21 @@ func (b *board) addTiles() {
 
 func (b *board) Draw(screen *tl.Screen) {
 	if b.wel.done {
+		b.initPlayers()
 		w, h := screen.Size()
 		b.level.SetOffset(w/2-((boardSize*tileSizeX)/2), h/2-((boardSize*tileSizeY)/2))
 		b.tilesDisp[b.sY][b.sX].selected()
-		//b.handleAIInput()
+		if b.turn == AI1 || b.turn == AI2 {
+			b.handleAIInput()
+		}
 		for _, tY := range b.tilesDisp {
 			for _, tX := range tY {
 				tX.Draw(screen)
 			}
 		}
 	}
+	//TODO if b.state == WINP1 || b.state == WINP2 {
+	// highlight win
 }
 
 func (b *board) handleHumanInput(event tl.Event) {
@@ -149,22 +158,24 @@ func (b *board) handleHumanInput(event tl.Event) {
 				b.sY++
 			}
 		case tl.KeySpace:
-			if b.start {
+			if b.state == PLAY {
 				b.setPiece()
-			} else {
-				b.start = true
+			} else if b.state == START {
+				b.state = PLAY
 			}
 		}
 	}
 }
 
 func (b *board) handleAIInput() {
+	b.comHud <- "your turn human.. good luck, you'll need it"
 	in := <-b.ComIn
 	b.tilesDisp[b.sY][b.sX].deselect()
 	b.sY = in[0]
 	b.sX = in[1]
 	b.setPiece()
 }
+
 func (b *board) initPlayers() {
 	if b.wel.done && b.wel.selected < 4 {
 		switch b.wel.selected {
@@ -177,31 +188,20 @@ func (b *board) initPlayers() {
 		case 2:
 			b.player1 = AI1
 			b.player2 = P2
+			b.ComOut <- b.tiles
 		case 3:
 			b.player1 = AI1
 			b.player2 = AI2
+			b.ComOut <- b.tiles
 		}
 		b.wel.selected = 4
+		b.turn = b.player1
 	}
 }
 
 func (b *board) Tick(event tl.Event) {
-	b.initPlayers()
 	if b.wel.done {
-
-		if b.turn == P1 || b.turn == P2 {
-			select {
-			case b.comHud <- "your turn human.. good luck, you'll need it":
-			default:
-			}
-			b.handleHumanInput(event)
-		} else {
-			select {
-			case b.comHud <- "AI WILL CRUSH YOU BLEEP BLOOP":
-			default:
-			}
-			b.handleAIInput()
-		}
+		b.handleHumanInput(event)
 	}
 }
 

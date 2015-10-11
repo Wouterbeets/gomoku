@@ -13,12 +13,6 @@ type hud struct {
 }
 
 func (h *hud) Draw(screen *tl.Screen) {
-	for _, v := range h.toDisp {
-		v.Draw(screen)
-	}
-}
-
-func (h *hud) Tick(event tl.Event) {
 mainLoop:
 	for {
 		select {
@@ -36,6 +30,13 @@ mainLoop:
 			break mainLoop
 		}
 	}
+	for _, v := range h.toDisp {
+		v.Draw(screen)
+	}
+}
+
+func (h *hud) Tick(event tl.Event) {
+
 }
 
 func newHud(com chan string, screen *tl.Screen) (h *hud) {

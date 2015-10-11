@@ -60,7 +60,6 @@ func (w *welcome) Tick(event tl.Event) {
 			w.done = true
 		}
 	}
-	w.choices[w.selected].SetColor(Bg, Fg)
 }
 
 func (w *welcome) Draw(screen *tl.Screen) {
@@ -71,6 +70,7 @@ func (w *welcome) Draw(screen *tl.Screen) {
 			v.Draw(screen)
 		}
 		w.msg.Draw(screen)
+		w.choices[w.selected].SetColor(Bg, Fg)
 		for _, v := range w.choices {
 			v.Draw(screen)
 		}
