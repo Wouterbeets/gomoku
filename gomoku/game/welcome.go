@@ -30,7 +30,7 @@ type welcome struct {
 	choices  [4]*tl.Text
 	selected int8
 	done     bool
-	level    *tl.BaseLevel
+	game     *tl.Game
 }
 
 func (w *welcome) Tick(event tl.Event) {
@@ -38,35 +38,35 @@ func (w *welcome) Tick(event tl.Event) {
 		switch event.Key { // If so, switch on the pressed key.
 		case tl.KeyArrowRight:
 			if w.selected < 3 {
-				w.choices[w.selected].SetColor(tl.ColorBlack, tl.ColorWhite)
+				w.choices[w.selected].SetColor(Fg, Bg)
 				w.selected++
 			}
 		case tl.KeyArrowLeft:
 			if w.selected > 0 {
-				w.choices[w.selected].SetColor(tl.ColorBlack, tl.ColorWhite)
+				w.choices[w.selected].SetColor(Fg, Bg)
 				w.selected--
 			}
 		case tl.KeyArrowUp:
 			if w.selected > 0 {
-				w.choices[w.selected].SetColor(tl.ColorBlack, tl.ColorWhite)
+				w.choices[w.selected].SetColor(Fg, Bg)
 				w.selected--
 			}
 		case tl.KeyArrowDown:
 			if w.selected < 3 {
-				w.choices[w.selected].SetColor(tl.ColorBlack, tl.ColorWhite)
+				w.choices[w.selected].SetColor(Fg, Bg)
 				w.selected++
 			}
 		case tl.KeySpace:
 			w.done = true
 		}
 	}
-	w.choices[w.selected].SetColor(tl.ColorWhite, tl.ColorBlack)
+	w.choices[w.selected].SetColor(Bg, Fg)
 }
 
 func (w *welcome) Draw(screen *tl.Screen) {
-	width, height := screen.Size()
-	w.level.SetOffset(width/2-((boardSize*tileSizeX)/2), height/2-((boardSize*tileSizeY)/2))
 	if !w.done {
+		width, height := screen.Size()
+		w.game.Screen().Level().(*tl.BaseLevel).SetOffset(width/2-(len(header[0])/2), height/2-(len(header)/2))
 		for _, v := range w.header {
 			v.Draw(screen)
 		}
@@ -78,21 +78,24 @@ func (w *welcome) Draw(screen *tl.Screen) {
 	}
 }
 
-func newWelcome() *welcome {
+func newWelcome(game *tl.Game) *welcome {
 	c := [4]string{"HOTSEAT", "P1 vs AI", "AI vs P2", "AI vs AI"}
+	hWidth := len(header[0])
+	hHeight := len(header)
 	w := &welcome{
-		msg:    tl.NewText(15, 15, msg, tl.ColorBlack, tl.ColorWhite),
+		msg:    tl.NewText(hWidth/2-(len(msg)/2), hHeight+1, msg, Fg, Bg),
 		header: [12]*tl.Text{},
 		choices: [4]*tl.Text{
-			tl.NewText(20, 17, c[0], tl.ColorWhite, tl.ColorBlack),
-			tl.NewText(20, 18, c[1], tl.ColorBlack, tl.ColorWhite),
-			tl.NewText(20, 19, c[2], tl.ColorBlack, tl.ColorWhite),
-			tl.NewText(20, 20, c[3], tl.ColorBlack, tl.ColorWhite),
+			tl.NewText(5, hHeight+3, c[0], Fg, Bg),
+			tl.NewText(hWidth/len(c)+5, hHeight+3, c[1], Fg, Bg),
+			tl.NewText((hWidth/len(c))*2+5, hHeight+3, c[2], Fg, Bg),
+			tl.NewText((hWidth/len(c))*3+5, hHeight+3, c[3], Fg, Bg),
 		},
 		done: false,
+		game: game,
 	}
 	for k, _ := range w.header {
-		w.header[k] = tl.NewText(0, k, header[k], tl.RgbTo256Color(92, 64, 51), tl.RgbTo256Color(60, 150, 180))
+		w.header[k] = tl.NewText(0, k, header[k], Fg, Bg)
 	}
 	return w
 }

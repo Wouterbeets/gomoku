@@ -21,7 +21,7 @@ const (
 	vDash rune = '│'
 
 	blank  rune = ' '
-	circle      = '●'
+	circle rune = '●'
 
 	tileSizeX  = 5
 	tileSizeY  = 3
@@ -30,11 +30,16 @@ const (
 	tileStr    = "┌───┐\n│   │\n└───┘"
 )
 
+var (
+	Bg tl.Attr = tl.RgbTo256Color(60, 150, 180)
+	Fg tl.Attr = tl.RgbTo256Color(92, 64, 51)
+)
+
 type board struct {
 	tiles     [boardSize][boardSize]int8
 	tilesDisp [boardSize][boardSize]*tile
-	sY        int8
-	sX        int8
+	sY        int8 //selected Y
+	sX        int8 //selected X
 	offsetX   int
 	offsetY   int
 	level     *tl.BaseLevel
@@ -45,6 +50,8 @@ type board struct {
 	ComIn     chan [2]int8
 	screen    *tl.Screen
 	wel       *welcome
+	start     bool
+	comHud    chan string
 }
 
 func (b *board) setPiece() {
@@ -109,6 +116,7 @@ func (b *board) Draw(screen *tl.Screen) {
 		w, h := screen.Size()
 		b.level.SetOffset(w/2-((boardSize*tileSizeX)/2), h/2-((boardSize*tileSizeY)/2))
 		b.tilesDisp[b.sY][b.sX].selected()
+		//b.handleAIInput()
 		for _, tY := range b.tilesDisp {
 			for _, tX := range tY {
 				tX.Draw(screen)
@@ -141,7 +149,11 @@ func (b *board) handleHumanInput(event tl.Event) {
 				b.sY++
 			}
 		case tl.KeySpace:
-			b.setPiece()
+			if b.start {
+				b.setPiece()
+			} else {
+				b.start = true
+			}
 		}
 	}
 }
@@ -153,9 +165,8 @@ func (b *board) handleAIInput() {
 	b.sX = in[1]
 	b.setPiece()
 }
-
-func (b *board) Tick(event tl.Event) {
-	if b.wel.selected < 4 {
+func (b *board) initPlayers() {
+	if b.wel.done && b.wel.selected < 4 {
 		switch b.wel.selected {
 		case 0:
 			b.player1 = P1
@@ -170,30 +181,47 @@ func (b *board) Tick(event tl.Event) {
 			b.player1 = AI1
 			b.player2 = AI2
 		}
+		b.wel.selected = 4
 	}
+}
+
+func (b *board) Tick(event tl.Event) {
+	b.initPlayers()
 	if b.wel.done {
+
 		if b.turn == P1 || b.turn == P2 {
+			select {
+			case b.comHud <- "your turn human.. good luck, you'll need it":
+			default:
+			}
 			b.handleHumanInput(event)
 		} else {
+			select {
+			case b.comHud <- "AI WILL CRUSH YOU BLEEP BLOOP":
+			default:
+			}
 			b.handleAIInput()
 		}
 	}
-	//check rules with rules package
 }
+
+//check rules with rules package
 
 func Start(comOut chan [boardSize][boardSize]int8, comIn chan [2]int8) {
 	game := tl.NewGame()
 
 	level := tl.NewBaseLevel(tl.Cell{
-		Bg: tl.RgbTo256Color(60, 150, 180),
-		Fg: tl.RgbTo256Color(92, 64, 51),
+		Bg: Bg,
+		Fg: Fg,
 	})
-	game.Screen().SetLevel(level)
-	w := newWelcome()
-	w.level = level
+	w := newWelcome(game)
 	level.AddEntity(w)
 	b := newBoard(level, game.Screen(), P1, AI2, comIn, comOut, w)
 	level.AddEntity(b)
-	b.turn = b.player1
+	comHud := make(chan string, 200)
+	h := newHud(comHud, game.Screen())
+	b.comHud = comHud
+	game.Screen().AddEntity(h)
+	game.Screen().SetLevel(level)
 	game.Start()
 }

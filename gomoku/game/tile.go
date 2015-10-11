@@ -29,7 +29,7 @@ func (t *tile) Tick(event tl.Event) {
 
 func (t *tile) deselect() {
 	c := &tl.Cell{
-		Bg: tl.RgbTo256Color(60, 150, 180),
+		Bg: Bg,
 	}
 	switch t.player {
 	case UND:
@@ -46,7 +46,7 @@ func (t *tile) deselect() {
 
 func (t *tile) selected() {
 	c := &tl.Cell{
-		Bg: tl.ColorYellow,
+		Bg: Fg,
 	}
 	switch t.player {
 	case UND:
