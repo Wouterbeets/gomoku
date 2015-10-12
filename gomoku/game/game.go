@@ -11,22 +11,18 @@ const (
 	P2
 	AI1
 	AI2
-	cornerUL rune = '┌'
-	cornerUR rune = '┐'
-	cornerLL rune = '└'
-	cornerLR rune = '┘'
 
 	hDash rune = '─'
 	vDash rune = '│'
 
-	blank  rune = ' '
+	blank  rune = '+'
 	circle rune = '●'
 
 	tileSizeX  = 5
-	tileSizeY  = 3
+	tileSizeY  = 2
 	boardSize  = 19
 	boardTiles = 19 * 19
-	tileStr    = "┌───┐\n│   │\n└───┘"
+	tileStr    = "  |  \n--+--"
 )
 
 const (
