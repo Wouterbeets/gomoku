@@ -92,26 +92,12 @@ func CheckPos(y, x int8, b *[boardSize][boardSize]int8) error {
 	return err
 }
 
-func Check(y, x int8, b *[boardSize][boardSize]int8) error {
+func CheckOccupied(y, x int8, b *[boardSize][boardSize]int8) error {
 	if b[y][x] != UND {
-		return errors.New("already a piece")
-
+		return errors.New("already occupied")
 	}
 	return nil
 }
-
-//func Check(y, x int8, b *[boardSize][boardSize]int8) error {
-//	for y := int8(0); y < boardSize; y++ {
-//		for x := int8(0); x < boardSize; x++ {
-//			if b[y][x] != UND {
-//				if err := CheckPos(y, x, b); err != nil {
-//					return err
-//				}
-//			}
-//		}
-//	}
-//	return nil
-//}
 
 //this is where we check the board to see if no rules need to be treated like
 //win

@@ -2,6 +2,7 @@ package game
 
 import (
 	"gomoku/rules"
+	"strconv"
 	tl "termloop"
 )
 
@@ -57,7 +58,7 @@ type board struct {
 }
 
 func (b *board) setPiece() {
-	if err := rules.Check(b.sY, b.sX, &b.tiles); err != nil {
+	if err := rules.CheckOccupied(b.sY, b.sX, &b.tiles); err != nil {
 		b.comHud <- err.Error()
 		if b.turn == AI1 || b.turn == AI2 {
 			b.ComOut <- b.tiles
@@ -164,12 +165,15 @@ func (b *board) handleHumanInput(event tl.Event) {
 }
 
 func (b *board) handleAIInput() {
-	b.comHud <- "your turn human.. good luck, you'll need it"
-	in := <-b.ComIn
-	b.tilesDisp[b.sY][b.sX].deselect()
-	b.sY = in[0]
-	b.sX = in[1]
-	b.setPiece()
+	select {
+	case moves := <-b.ComIn:
+		b.comHud <- "AI plays: " + strconv.Itoa(int(moves[0])) + strconv.Itoa(int(moves[1]))
+		b.tilesDisp[b.sY][b.sX].deselect()
+		b.sY = moves[0]
+		b.sX = moves[1]
+		b.setPiece()
+	default:
+	}
 }
 
 func (b *board) initPlayers() {
