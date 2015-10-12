@@ -4,10 +4,12 @@ import (
 	tl "termloop"
 )
 
+const hudMem = 60
+
 type hud struct {
 	screen  *tl.Screen
 	com     chan string
-	toDisp  [20]*tl.Text
+	toDisp  [hudMem]*tl.Text
 	offsetX int
 	offsetY int
 }
@@ -17,7 +19,7 @@ mainLoop:
 	for {
 		select {
 		case str := <-h.com:
-			i := 19
+			i := hudMem - 1
 			for i > 0 {
 				h.toDisp[i] = h.toDisp[i-1]
 				if h.toDisp[i] != nil {

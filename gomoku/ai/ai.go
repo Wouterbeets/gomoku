@@ -2,6 +2,7 @@ package ai
 
 import (
 	"math/rand"
+	"time"
 )
 
 type mes struct {
@@ -36,7 +37,7 @@ func (ai *ai) Think([boardSize][boardSize]int8) (move [2]int8) {
 }
 
 func (ai *ai) Start() {
-	rand.Seed(42)
+	rand.Seed(time.Now().UnixNano())
 	for {
 		in := <-ai.ComIn
 		ai.ComOut <- ai.Think(in)

@@ -95,6 +95,7 @@ func CheckPos(y, x int8, b *[boardSize][boardSize]int8) error {
 func Check(y, x int8, b *[boardSize][boardSize]int8) error {
 	if b[y][x] != UND {
 		return errors.New("already a piece")
+
 	}
 	return nil
 }

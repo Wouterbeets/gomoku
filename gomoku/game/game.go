@@ -86,10 +86,10 @@ func (b *board) setPiece() {
 	if err := rules.CheckWin(b.sY, b.sX, &b.tiles); err != nil {
 		if b.turn == b.player1 {
 			b.state = WINP2
-			b.comHud <- err.Error() + "player 1"
+			b.comHud <- err.Error() + " player 2"
 		} else {
 			b.state = WINP1
-			b.comHud <- err.Error() + "player 2"
+			b.comHud <- err.Error() + " player 1"
 		}
 	}
 }
@@ -121,7 +121,7 @@ func (b *board) Draw(screen *tl.Screen) {
 		w, h := screen.Size()
 		b.level.SetOffset(w/2-((boardSize*tileSizeX)/2), h/2-((boardSize*tileSizeY)/2))
 		b.tilesDisp[b.sY][b.sX].selected()
-		if b.turn == AI1 || b.turn == AI2 {
+		if (b.turn == AI1 || b.turn == AI2) && b.state != WINP1 && b.state != WINP2 {
 			b.handleAIInput()
 		}
 		for _, tY := range b.tilesDisp {
