@@ -30,7 +30,7 @@ func New() *ai {
 	return ai
 }
 
-func (ai *ai) Think([boardSize][boardSize]int8) (move [2]int8) {
+func (ai *ai) Think(board [boardSize][boardSize]int8) (move [2]int8) {
 	move[0] = int8(rand.Intn(boardSize))
 	move[1] = int8(rand.Intn(boardSize))
 	return
@@ -39,7 +39,7 @@ func (ai *ai) Think([boardSize][boardSize]int8) (move [2]int8) {
 func (ai *ai) Start() {
 	rand.Seed(time.Now().UnixNano())
 	for {
-		in := <-ai.ComIn
-		ai.ComOut <- ai.Think(in)
+		board := <-ai.ComIn
+		ai.ComOut <- ai.Think(board)
 	}
 }
