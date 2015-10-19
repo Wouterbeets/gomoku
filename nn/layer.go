@@ -40,6 +40,6 @@ func (l *layer) String() string {
 
 func (l *layer) activate() {
 	for _, neuron := range l.neurons {
-		neuron.activate()
+		go neuron.activate()
 	}
 }

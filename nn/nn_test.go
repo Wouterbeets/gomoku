@@ -10,12 +10,14 @@ func TestNewNet(test *testing.T) {
 		hiddenNeurons int
 		hiddenLayers  int
 		outputNeurons int
+		in            []float64
 	}{
 		{
 			inputNeurons:  2,
 			hiddenNeurons: 10,
 			hiddenLayers:  2,
 			outputNeurons: 1,
+			in:            []float64{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
 		},
 		{
 			inputNeurons:  19 * 19,
@@ -26,7 +28,8 @@ func TestNewNet(test *testing.T) {
 	}
 	for _, t := range tests {
 		n := NewNet(t.inputNeurons, t.hiddenNeurons, t.hiddenLayers, t.outputNeurons)
-		_ = n
+		n.Activate()
+
 	}
 
 }
