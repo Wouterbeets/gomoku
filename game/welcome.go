@@ -2,7 +2,7 @@ package game
 
 //welcome manages he startup message and lets you hoose a gametpye
 import (
-	tl "termloop"
+	tl "github.com/JoelOtter/termloop"
 )
 
 const (

@@ -2,6 +2,7 @@ package rules
 
 import (
 	"errors"
+	"math"
 )
 
 const (
@@ -71,24 +72,31 @@ func horiz(posY, posX int8, b *[boardSize][boardSize]int8) (int, error) {
 	return l, nil
 }
 
-func CheckWin(y, x int8, b *[boardSize][boardSize]int8) error {
-	if _, err := horiz(y, x, b); err != nil {
-		return err
+func CheckWin(y, x int8, b *[boardSize][boardSize]int8) (error, int) {
+	sum := 0
+	score := 0
+	err := errors.New("")
+	if score, err = horiz(y, x, b); err != nil {
+		return err, math.MinInt64
 	}
-	if _, err := verti(y, x, b); err != nil {
-		return err
+	sum += score
+	if score, err = verti(y, x, b); err != nil {
+		return err, math.MinInt64
 	}
-	if _, err := diagDown(y, x, b); err != nil {
-		return err
+	sum += score
+	if score, err = diagDown(y, x, b); err != nil {
+		return err, math.MinInt64
 	}
-	if _, err := diagUp(y, x, b); err != nil {
-		return err
+	sum += score
+	if score, err = diagUp(y, x, b); err != nil {
+		return err, math.MinInt64
 	}
-	return nil
+	sum += score
+	return nil, sum
 }
 
 func CheckPos(y, x int8, b *[boardSize][boardSize]int8) error {
-	err := CheckWin(y, x, b)
+	err, _ := CheckWin(y, x, b)
 	return err
 }
 

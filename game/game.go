@@ -1,9 +1,10 @@
 package game
 
 import (
+	tl "github.com/JoelOtter/termloop"
+	"gomoku/conf"
 	"gomoku/rules"
 	"strconv"
-	tl "termloop"
 )
 
 const (
@@ -80,7 +81,7 @@ func (b *board) setPiece() {
 			b.ComOut <- b.tiles
 		}
 	}
-	if err := rules.CheckWin(b.sY, b.sX, &b.tiles); err != nil {
+	if err, _ := rules.CheckWin(b.sY, b.sX, &b.tiles); err != nil {
 		if b.turn == b.player1 {
 			b.state = WINP2
 			b.comHud <- err.Error() + " player 2"
@@ -155,7 +156,7 @@ func (b *board) handleHumanInput(event tl.Event) {
 				b.sY++
 			}
 		case tl.KeySpace:
-			if b.state == PLAY {
+			if b.state == PLAY && b.turn == P1 || b.turn == P2 {
 				b.setPiece()
 			} else if b.state == START {
 				b.state = PLAY
@@ -196,6 +197,11 @@ func (b *board) initPlayers() {
 		}
 		b.wel.selected = 4
 		b.turn = b.player1
+		conf.SetConf <- conf.Config{
+			P1:        b.player1,
+			P2:        b.player2,
+			BoardSize: boardSize,
+		}
 	}
 }
 
@@ -207,7 +213,7 @@ func (b *board) Tick(event tl.Event) {
 
 //check rules with rules package
 
-func Start(comOut chan [boardSize][boardSize]int8, comIn chan [2]int8) {
+func Start(comOut chan [boardSize][boardSize]int8, comIn chan [2]int8, comHud chan string) {
 	game := tl.NewGame()
 
 	level := tl.NewBaseLevel(tl.Cell{
@@ -218,7 +224,6 @@ func Start(comOut chan [boardSize][boardSize]int8, comIn chan [2]int8) {
 	level.AddEntity(w)
 	b := newBoard(level, game.Screen(), P1, AI2, comIn, comOut, w)
 	level.AddEntity(b)
-	comHud := make(chan string, 200)
 	h := newHud(comHud, game.Screen())
 	b.comHud = comHud
 	game.Screen().AddEntity(h)

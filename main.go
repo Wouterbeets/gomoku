@@ -1,14 +1,13 @@
 package main
 
 import (
-	"fmt"
 	"gomoku/ai"
 	"gomoku/game"
 )
 
 func main() {
-	fmt.Println("main")
-	ai := ai.New()
+	comHud := make(chan string, 200)
+	ai := ai.New(2, comHud)
 	go ai.Start()
-	game.Start(ai.ComIn, ai.ComOut)
+	game.Start(ai.ComIn, ai.ComOut, comHud)
 }

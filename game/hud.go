@@ -1,7 +1,7 @@
 package game
 
 import (
-	tl "termloop"
+	tl "github.com/JoelOtter/termloop"
 )
 
 const hudMem = 60

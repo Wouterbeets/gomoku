@@ -1,8 +1,7 @@
 package game
 
 import (
-	//"fmt"
-	tl "termloop"
+	tl "github.com/JoelOtter/termloop"
 )
 
 type tile struct {
