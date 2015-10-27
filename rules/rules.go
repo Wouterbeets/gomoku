@@ -72,7 +72,19 @@ func horiz(posY, posX int8, b *[boardSize][boardSize]int8) (int, error) {
 	return l, nil
 }
 
+func checkDraw(b *[boardSize][boardSize]int8) error {
+	for _, row := range b {
+		for _, col := range row {
+			if col == 0 {
+				return nil
+			}
+		}
+	}
+	return errors.New("draw")
+}
+
 func CheckWin(y, x int8, b *[boardSize][boardSize]int8) (error, int) {
+	checkDraw(b)
 	sum := 0
 	score := 0
 	err := errors.New("")
