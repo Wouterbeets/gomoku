@@ -84,7 +84,9 @@ func checkDraw(b *[boardSize][boardSize]int8) error {
 }
 
 func CheckWin(y, x int8, b *[boardSize][boardSize]int8) (error, int) {
-	checkDraw(b)
+	if err := checkDraw(b); err != nil {
+		return err, 0
+	}
 	sum := 0
 	score := 0
 	err := errors.New("")

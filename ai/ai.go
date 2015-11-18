@@ -174,6 +174,7 @@ func (ai *Ai) Think(board [boardSize][boardSize]int8, depth int) (move [2]int8) 
 	//ai.comHud <- "starting"
 	//	_, y, x := ai.miniMax(&board, depth, ai.p1)
 	moves := ai.heurF(&board, ai.p1)
+	fmt.Println(moves)
 	movesIndex := []int{}
 	bestVal := 0.0
 	for k, v := range moves {

@@ -9,6 +9,7 @@ import (
 	"gomoku/rules"
 	"math/rand"
 	"nn"
+	"time"
 )
 
 type Arena struct {
@@ -31,8 +32,6 @@ func (a *Arena) String() (str string) {
 	str += "\n"
 	return str
 }
-
-//TODO: get depth from conf
 
 func brainHeur(brain *nn.Net) func(*[19][19]int8, int8) []float64 {
 	inp := make([]float64, 19*19)
@@ -84,8 +83,16 @@ func (a *Arena) move(player int8) error {
 	a.ais[player-1].ComIn <- a.board
 	move := <-a.ais[player-1].ComOut
 	if a.board[move[0]][move[1]] != 0 {
+		y, x := rand.Intn(19), rand.Intn(19)
+		for a.board[y][x] != 0 {
+			y, x = rand.Intn(19), rand.Intn(19)
+		}
+		a.board[y][x] = player
+		win, _ := rules.CheckWin(move[0], move[1], &a.board)
+		if win != nil {
+			return errors.New("draw")
+		}
 		return errors.New("space already occupied")
-		//use other heur here
 	}
 	a.board[move[0]][move[1]] = player
 	win, _ := rules.CheckWin(move[0], move[1], &a.board)
@@ -98,39 +105,34 @@ func (a *Arena) move(player int8) error {
 func (a *Arena) Fight(gen, i int) (int, int) {
 	turns1 := 0
 	turns2 := 0
+	doubles1 := 0
+	doubles2 := 0
 	for {
 		turns1++
 		for gameState := a.move(1); gameState != nil; {
 			errMsg := gameState.Error()
 			if errMsg == "win" {
-				return 361 - turns1, turns2
+				return 361 - doubles1 - turns1, turns2 - doubles2
 			} else if errMsg == "draw" {
-				return turns1, turns2
+				return turns1 - doubles1, turns2 - doubles2
 			} else if errMsg == "space already occupied" {
-				turns1 += int(ai.Heur(&a.board, a.p1))
-				turns2 += int(ai.Heur(&a.board, a.p2))
-				return turns1, turns2
+				doubles1++
+				gameState = nil
 			}
 		}
+		//fmt.Println("player one genereation played", gen, "\n", a)
 		turns2++
-		if i == 0 {
-			fmt.Println("generation", gen)
-			fmt.Println(a)
-		}
-		for err := a.move(2); err != nil; {
-			errMsg := err.Error()
+		for gameState := a.move(2); gameState != nil; {
+			errMsg := gameState.Error()
 			if errMsg == "win" {
-				return turns1, 361 - turns2
+				return turns1 - doubles1, 361 - turns2 - doubles2
 			} else if errMsg == "draw" {
-				return turns1, turns2
+				return turns1 - doubles1, turns2 - doubles2
 			} else if errMsg == "space already occupied" {
-				turns1 += int(ai.Heur(&a.board, a.p1))
-				turns2 += int(ai.Heur(&a.board, a.p2))
-				return turns1, turns2
+				doubles2++
+				gameState = nil
 			}
 		}
-		//		fmt.Println("generation", gen)
-		//		fmt.Println(a)
 	}
 }
 
@@ -138,25 +140,24 @@ func (a *Arena) Fight(gen, i int) (int, int) {
 func ArenaFightFunc(ais []*gen.Ai, gen int) {
 	arenas := make([]*Arena, len(ais))
 	for i := 0; i < len(ais); i++ {
-		ran := i
-		for ran == i {
-			ran = rand.Intn(len(ais))
+		for j := i + 1; j < len(ais); j++ {
+			arenas[i] = newArena(ais[i].Net, ais[j].Net)
+			arenas[i].indexAi1 = i
+			arenas[i].indexAi2 = j
+			score1, score2 := arenas[i].Fight(gen, i)
+			fmt.Println(i, j, "fight", score1, score2)
+			ais[arenas[i].indexAi1].Score += float64(score1)
+			ais[arenas[i].indexAi1].GamesPlayed++
+			ais[arenas[i].indexAi2].Score += float64(score2)
+			ais[arenas[i].indexAi2].GamesPlayed++
 		}
-		arenas[i] = newArena(ais[i].Net, ais[rand.Intn(len(ais))].Net)
-		arenas[i].indexAi1 = i
-		arenas[i].indexAi2 = ran
-	}
-	for i, a := range arenas {
-		score1, score2 := a.Fight(gen, i)
-		ais[a.indexAi1].Score += float64(score1)
-
-		ais[a.indexAi1].GamesPlayed++
-		ais[a.indexAi2].Score += float64(score2)
-		ais[a.indexAi2].GamesPlayed++
 	}
 	for _, ai := range ais {
+		fmt.Print(ai.Score, " ")
 		ai.Score /= ai.GamesPlayed
+		fmt.Println(ai.Score, ai.GamesPlayed)
 	}
+	fmt.Println("")
 }
 
 func main() {
@@ -167,10 +168,11 @@ func main() {
 		P2:    2,
 	}
 	conf.SetConf <- c
-	pool := gen.CreatePool(30, 0.01, 1, 19*19, 50, 3, 19*19)
+	pool := gen.CreatePool(10, 0.01, 10, 19*19, 50, 3, 19*19)
 	pool.FightFunc = ArenaFightFunc
 	pool.Evolve(300000, nil, nil)
 }
 
 func init() {
+	rand.Seed(time.Now().UnixNano())
 }
